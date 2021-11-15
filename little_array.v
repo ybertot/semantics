@@ -16,19 +16,6 @@ Inductive instr0 : Type :=
  | while (_ :bexpr0)(_ : instr0) | skip |
    array_set (s : string) (index : aexpr0) (val : aexpr0).
 
-Inductive assert0 : Type :=
-  a_b(b: bexpr0) | a_not(a: assert0) | a_conj(a a': assert0)
-| pred(s: string)(l: list aexpr0).
-
-Inductive condition0 : Type :=
-| c_imp : assert0 -> assert0 -> condition0.
-
-Inductive a_instr0 : Type :=
-  prec(a:assert0)(i:a_instr0) | a_skip
-| a_assign(x:string)(e:aexpr0) | a_sequence(i1 i2:a_instr0)
-| a_while(b:bexpr0)(a:assert0)(i:a_instr0)
-| a_array_set (s : string) (ind : aexpr0) (val : aexpr0).
-
 Fixpoint lookup (A:Type)(l:list(string*A))(def:A)(x:string): A :=
   match l with nil => def
   | (y,a)::tl => if string_dec y x then a else lookup tl def x
@@ -38,7 +25,6 @@ End types.
 
 Arguments anum [string].
 Arguments skip {string}.
-Arguments a_skip {string}.
 
 Module Type little_syntax.
 Parameter string : Set.
@@ -61,30 +47,6 @@ Axiom all_distinct :
 Definition aexpr := aexpr0 string.
 Definition bexpr := bexpr0 string.
 Definition instr := instr0 string.
-Definition assert := assert0 string.
-Definition condition := condition0 string.
-Definition a_instr := a_instr0 string.
-
-Fixpoint un_annot (i:a_instr):instr :=
-  match i with
-    prec _ i => un_annot i
-  | a_skip => skip
-  | a_assign x e => assign x e
-  | a_sequence i1 i2 => sequence (un_annot i1)(un_annot i2)
-  | a_while b a i => while b (un_annot i)
-  | a_array_set a i v => array_set a i v
-  end.
-
-Definition false_assert : assert := pred false_cst nil.
-
-Fixpoint mark (i:instr):a_instr :=
-  match i with
-    skip => a_skip
-  | assign x e => a_assign x e
-  | sequence i1 i2 => a_sequence (mark i1)(mark i2)
-  | while b i => a_while b false_assert (mark i)
-  | array_set ar ind val => a_array_set ar ind val
-  end.
 
 End little_syntax.
 
@@ -156,13 +118,6 @@ Fixpoint uf {A : Type} (r:list (string * A))(x:string)(v:A)
       else
         bind (uf tl x v) (fun tl' => Some ((y,n')::tl'))
     end.
-
-(*
-Inductive s_update : env->string->Z->env->Prop :=
-| s_up1 : forall r x v v', s_update ((x,v)::r) x v' ((x,v')::r)
-| s_up2 : forall r r' x y v v', s_update r x v' r' ->
-            x <> y -> s_update ((y,v)::r) x v' ((y,v)::r').
-*)
 
 Inductive ar_update : list Z -> nat -> Z -> list Z -> Prop :=
 | ar_up1 : forall l v v', ar_update (v :: l) 0%nat v' (v' :: l)
@@ -473,19 +428,6 @@ Proof with eauto.
   simpl; match goal with id :_ |- _ => rewrite id; auto end.
 Qed.
 
-(*
-Lemma lookup_aeval :
-  forall r r_a x v, lookup r x = Some v -> aeval r r_a (avar x) v.
-Proof with auto.
-  induction r; intros x v.
-  simpl; intros; discriminate.
-  destruct a as [y n]; simpl; case (string_dec y x)...
-  intros Heq Heq2; injection Heq2; intros; subst...
-Qed.
-
-Global Hint Resolve lookup_aeval : core.
-*)
-
 Ltac find_deep_bind a :=
   match a with
     bind ?a _ => find_deep_bind a
@@ -541,23 +483,6 @@ Proof with eauto with zarith.
   generalize (Zlt_cases v2 v1); destruct (Zlt_bool v2 v1);
   intros comp Heq; injection Heq; intros; subst v...
 Qed.
-
-(*
-Lemma uf_s :
-  forall r x v r', uf r x v = Some r' ->
-  s_update r x v r'.
-Proof with eauto.
-  induction r.
-  simpl; intros; discriminate.
-  destruct a as (y,n); simpl; intros x v r'.
-  case (string_dec y x).
-    intros Heq1 Heq2; injection Heq2; intros; subst; auto.
-
-    case_eq (uf r x v); try(intros; discriminate).
-    intros r'' Heqr'' Hn Heq; injection Heq; intros; subst r'; auto.
-Qed.
-
-*)
 
 Global Hint Resolve bf_eval : core.
 
@@ -626,37 +551,5 @@ Proof.
  intros r i r' i'; split;
   [intros [n Hn]; apply f_star_sem with n; auto| apply sos_star_f; auto].
 Qed.
-
-Definition one_hundred := 100%nat.
-
-(* id should have the type : sos_star r i i' r' *)
-Ltac add_exec_hyp_aux id r i i' r' :=
-  let res := eval vm_compute in (f_star one_hundred r' i') in
-  match res with
-  | Some(?r'', ?i'') =>
-     (cut (sos_star r i i'' r'');
-       [clear id; intros id |
-        apply sos_star_trans with (1:= id);
-        apply (f_star_sem one_hundred); apply refl_equal]);
-     match i'' with
-       skip => cut (exec r i r'');
-            [clear id; intros id | apply sos_imp_sn_aux with skip; trivial]
-     | _ => add_exec_hyp_aux id r i i'' r''
-     end
-  end.
-
-Ltac add_exec_hyp id r i :=
-  assert (id : sos_star r i i r); [apply SOS6 | add_exec_hyp_aux id r i i r].
-
-
-Ltac solve_exec_aux r i :=
-  let H := fresh "Hse" in
-  (add_exec_hyp H r i; (eapply ex_intro || eapply exist); eapply H).
-
-Ltac solve_exec :=
-  match goal with
-    |- exists r, exec ?r0 ?i0 r => solve_exec_aux r0 i0
-  | |- {r | exec ?r0 ?i0 r} => solve_exec_aux r0 i0
-  end.
 
 End little.
