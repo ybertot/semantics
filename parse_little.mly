@@ -1,19 +1,19 @@
 %{
-  open Big_int
+  module ZarithZ = Z
   open String
   open Str_little
   open Str
 
 (* Making Coq data. *)
 
-let big_int2 = big_int_of_int 2
+let big_int2 = ZarithZ.of_int 2
 
 let z_of_big_int n =
-    let rec f n = if eq_big_int n unit_big_int then Interp.XH 
-                else let q,r = quomod_big_int n big_int2 in
-                  if eq_big_int r unit_big_int then Interp.XI(f q)
+    let rec f n = if ZarithZ.equal n ZarithZ.one then Interp.XH 
+                else let q,r = ZarithZ.div_rem n big_int2 in
+                  if ZarithZ.equal r ZarithZ.one then Interp.XI(f q)
                   else Interp.XO(f q) in
-  if eq_big_int n zero_big_int then Interp.Z0 else Interp.Zpos(f n)
+  if ZarithZ.equal n ZarithZ.zero then Interp.Z0 else Interp.Zpos(f n)
 
 let p a b = Interp.Pair(a, b)
 let c a b = Interp.Cons(a, b)
@@ -25,7 +25,7 @@ let rec mk_precs l i =
 %}
 %token VARIABLES IN END WHILE DO DONE ASSIGN PLUS MINUS COMMA CONJ BANG
 %token SEMICOLUMN OPEN CLOSE BOPEN BCLOSE SKIP LT SOPEN SCLOSE MINFTY PINFTY
-%token <Big_int.big_int> NUM
+%token <Z.t> NUM
 %token <string> ID
 %left PLUS
 %right CONJ

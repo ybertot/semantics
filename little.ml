@@ -1,4 +1,5 @@
-open Big_int
+module ZarithZ = Z
+
 open Parse_little
 open Interp
 open Str_little
@@ -20,26 +21,26 @@ open L
 (* Displaying the results: first displaying integers. *)
 
 let rec big_int_of_positive = function
-  Interp.XH -> unit_big_int
-| Interp.XI p -> succ_big_int (mult_int_big_int 2 (big_int_of_positive p))
-| Interp.XO p -> mult_int_big_int 2 (big_int_of_positive p)
+  Interp.XH -> ZarithZ.one
+| Interp.XI p -> ZarithZ.succ (ZarithZ.mul (ZarithZ.of_int 2) (big_int_of_positive p))
+| Interp.XO p -> ZarithZ.mul (ZarithZ.of_int 2) (big_int_of_positive p)
 
 let bigint_of_z = function
-  Interp.Z0 -> zero_big_int
+  Interp.Z0 -> ZarithZ.zero
 | Interp.Zpos x -> big_int_of_positive x
-| Interp.Zneg x -> minus_big_int (big_int_of_positive x)
+| Interp.Zneg x -> ZarithZ.neg (big_int_of_positive x)
   
 let rec display_result = function
   Interp.Nil -> ()
 | Interp.Cons(Interp.Pair(s, v), tl) ->
-  print_string (s ^ " " ^ string_of_big_int (bigint_of_z v) ^ "\n");
+  print_string (s ^ " " ^ ZarithZ.to_string (bigint_of_z v) ^ "\n");
   display_result tl
 
 (* Displaying assertions *)
 
 let rec string_of_expr = function
   Interp.Avar s -> s
-| Interp.Anum n -> string_of_big_int (bigint_of_z n)
+| Interp.Anum n -> ZarithZ.to_string (bigint_of_z n)
 | Interp.Aplus(e1, e2) -> string_of_expr e1 ^ "+" ^ string_of_expr e2
 
 let string_of_bexpr (Interp.Blt(e1, e2)) =
@@ -109,7 +110,7 @@ let rec collect_assert set = function
 
 let rec coq_expr = function
   Interp.Avar s -> s
-| Interp.Anum n -> string_of_big_int (bigint_of_z n)
+| Interp.Anum n -> ZarithZ.to_string (bigint_of_z n)
 | Interp.Aplus(e1,e2) -> coq_expr e1 ^ "+" ^ coq_expr e2
 
 let coq_bexpr (Interp.Blt(e1,e2)) = coq_expr e1 ^ " < " ^ coq_expr e2

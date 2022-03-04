@@ -75,10 +75,10 @@ Fixpoint special_tokens (rev_buf:string) (acc:list token) {struct rev_buf}:
 Definition Z_of_ascii (a:ascii) := Z_of_nat(nat_of_ascii a).
 
 Definition is_digit (a:ascii) : bool :=
-  match Z_of_ascii a ?= Z_of_ascii "0"%char with
+  match (Z_of_ascii a ?= Z_of_ascii "0"%char)%Z with
     Lt => false
   | Eq => true
-  | Gt => match Z_of_ascii a ?= Z_of_ascii "9"%char with
+  | Gt => match (Z_of_ascii a ?= Z_of_ascii "9"%char)%Z with
       Gt => false
     | _ =>  true
     end
@@ -88,16 +88,16 @@ Fact example_is_digit : is_digit "8" = true.
 Proof refl_equal true.
 
 Definition is_alpha (a:ascii) : bool :=
-  match Z_of_ascii a ?= Z_of_ascii "A"%char with
+  match (Z_of_ascii a ?= Z_of_ascii "A"%char)%Z with
     Lt => false
   | Eq => true
-  | Gt => match Z_of_ascii a ?= Z_of_ascii "Z"%char with
-      Gt => match Z_of_ascii a ?= Z_of_ascii "_"%char with
+  | Gt => match (Z_of_ascii a ?= Z_of_ascii "Z"%char)%Z with
+      Gt => match (Z_of_ascii a ?= Z_of_ascii "_"%char)%Z with
         Eq => true
-      | _ => match Z_of_ascii a ?= Z_of_ascii "a"%char with
+      | _ => match (Z_of_ascii a ?= Z_of_ascii "a"%char)%Z with
           Lt => false
         | Eq => true
-        | Gt => match Z_of_ascii a ?= Z_of_ascii "z"%char with
+        | Gt => match (Z_of_ascii a ?= Z_of_ascii "z"%char)%Z with
             Gt => false
           | _ => true
           end
