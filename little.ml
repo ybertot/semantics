@@ -1,4 +1,4 @@
-open Big_int
+module Big_int = Z
 open Parse_little
 open Interp
 open Str_little
@@ -7,7 +7,6 @@ open Str
 (* Recuperating the certified code from the file Interp. *)
 (* Str_little.Str is a module providing the string operations, based on
    ocaml native strings. *)
-
 module D = Interp.Coq_denot(Str_little.Str)
 module A = Interp.Coq_ax(Str_little.Str)
 module B = Interp.Coq_ab(Str_little.Str)
@@ -16,30 +15,31 @@ open A
 open D
 open L
 
-
 (* Displaying the results: first displaying integers. *)
 
+let two_big_int = Big_int.of_int 2
+
 let rec big_int_of_positive = function
-  Interp.XH -> unit_big_int
-| Interp.XI p -> succ_big_int (mult_int_big_int 2 (big_int_of_positive p))
-| Interp.XO p -> mult_int_big_int 2 (big_int_of_positive p)
+  Interp.XH -> Big_int.one
+| Interp.XI p -> Big_int.succ (Big_int.mul two_big_int (big_int_of_positive p))
+| Interp.XO p -> Big_int.mul two_big_int (big_int_of_positive p)
 
 let bigint_of_z = function
-  Interp.Z0 -> zero_big_int
+  Interp.Z0 -> Big_int.zero
 | Interp.Zpos x -> big_int_of_positive x
-| Interp.Zneg x -> minus_big_int (big_int_of_positive x)
+| Interp.Zneg x -> Big_int.neg (big_int_of_positive x)
   
 let rec display_result = function
   Interp.Nil -> ()
 | Interp.Cons(Interp.Pair(s, v), tl) ->
-  print_string (s ^ " " ^ string_of_big_int (bigint_of_z v) ^ "\n");
+  print_string (s ^ " " ^ Big_int.to_string (bigint_of_z v) ^ "\n");
   display_result tl
 
 (* Displaying assertions *)
 
 let rec string_of_expr = function
   Interp.Avar s -> s
-| Interp.Anum n -> string_of_big_int (bigint_of_z n)
+| Interp.Anum n -> Big_int.to_string (bigint_of_z n)
 | Interp.Aplus(e1, e2) -> string_of_expr e1 ^ "+" ^ string_of_expr e2
 
 let string_of_bexpr (Interp.Blt(e1, e2)) =
@@ -109,7 +109,7 @@ let rec collect_assert set = function
 
 let rec coq_expr = function
   Interp.Avar s -> s
-| Interp.Anum n -> string_of_big_int (bigint_of_z n)
+| Interp.Anum n -> Big_int.to_string (bigint_of_z n)
 | Interp.Aplus(e1,e2) -> coq_expr e1 ^ "+" ^ coq_expr e2
 
 let coq_bexpr (Interp.Blt(e1,e2)) = coq_expr e1 ^ " < " ^ coq_expr e2
