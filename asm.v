@@ -1,4 +1,5 @@
-Require Import ZArith Arith List syntax little Lia.
+ Require Import ZArith Arith List Lia.
+Require Import syntax little.
 
 Import ListNotations.
 
@@ -328,6 +329,11 @@ induction 1 as [ | r r' x a v ev up |
 - now rewrite <- Ih2.
 Qed.
 
+Lemma Nat_add_simpl_l (n m : nat) : (n + m - n = m)%nat.
+Proof.
+now rewrite Nat.add_comm, Nat.add_sub.
+Qed.
+
 Lemma compile_instr_complete :
   forall env env' i pg1 pg2 stk,
   exec env i env' ->
@@ -354,9 +360,9 @@ induction dyn as [ | env env' x e v ev up |
       fold pg in Pec.
       assert (t1 := exec_asm_seq pg _ _ _ _ _ 1 _ _ Pec).
       rewrite t1; unfold pg; simpl; rewrite nth_error_app2; [ | lia].
-      rewrite minus_plus, <- (Nat.add_0_r (length _)).
+      rewrite Nat_add_simpl_l, <- (Nat.add_0_r (length _)).
       rewrite nth_error_app2;[ | lia].
-      rewrite minus_plus; simpl.
+      rewrite Nat_add_simpl_l; simpl.
       assert (t2 := update_set_nth _ _ _ _ up).
       now rewrite t2, app_length, Nat.add_0_r, Nat.add_assoc.
     intros pg1 pg2 stk.
@@ -421,19 +427,19 @@ induction dyn as [ | env env' x e v ev up |
                   length (compile_aexp (map fst env) e2) + 1) middle_pc);
          cycle 1.
     simpl; unfold pg; rewrite <-!Nat.add_assoc.
-    repeat (rewrite nth_error_app2, minus_plus; [ | lia]).
+    repeat (rewrite nth_error_app2, Nat_add_simpl_l; [ | lia]).
     now simpl; rewrite !Nat.add_assoc.
   rewrite (exec_asm_seq pg _ stk _ _ _ _ _ _ Pec2).
   rewrite (exec_asm_seq pg stk stk (env_to_mem env')
              (env_to_mem env') 1 ec3 _ (length pg1)); cycle 1.
     simpl; unfold pg, middle_pc; rewrite <-!Nat.add_assoc.
-    repeat (rewrite nth_error_app2, minus_plus; [ | lia]).
+    repeat (rewrite nth_error_app2, Nat_add_simpl_l; [ | lia]).
     simpl.
-    repeat (rewrite nth_error_app2, minus_plus; [ | lia]).
+    repeat (rewrite nth_error_app2, Nat_add_simpl_l; [ | lia]).
     simpl.
     set (L := length (compile_instr _ _ _)); rewrite <- (Nat.add_0_r L).
     unfold L.
-    repeat (rewrite nth_error_app2, minus_plus; [ | lia]).
+    repeat (rewrite nth_error_app2, Nat_add_simpl_l; [ | lia]).
     easy.
   rewrite Pec3; unfold middle_pc; rewrite !app_length; simpl (length [_]).
   now rewrite !Nat.add_assoc.
@@ -462,7 +468,7 @@ exists (ec1 + 1)%nat.
 rewrite (exec_asm_seq _ _ (Z.b2z (negb false) :: stk) _ _ _ 1 _ _ Pec1).
 simpl.
 unfold pg; rewrite <-!Nat.add_assoc.
-repeat (rewrite nth_error_app2, minus_plus; [ | lia]).
+repeat (rewrite nth_error_app2, Nat_add_simpl_l; [ | lia]).
 simpl.
 unfold last_pc, middle_pc.
 apply f_equal; lia.
