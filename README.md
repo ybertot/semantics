@@ -10,8 +10,8 @@ Follow the instructions on https://github.com/coq-community/templates to regener
 [![Zulip][zulip-shield]][zulip-link]
 [![DOI][doi-shield]][doi-link]
 
-[docker-action-shield]: https://github.com/coq-community/semantics/workflows/Docker%20CI/badge.svg?branch=master
-[docker-action-link]: https://github.com/coq-community/semantics/actions?query=workflow:"Docker%20CI"
+[docker-action-shield]: https://github.com/coq-community/semantics/actions/workflows/docker-action.yml/badge.svg?branch=master
+[docker-action-link]: https://github.com/coq-community/semantics/actions/workflows/docker-action.yml
 
 [contributing-shield]: https://img.shields.io/badge/contributions-welcome-%23f7931e.svg
 [contributing-link]: https://github.com/coq-community/manifesto/blob/master/CONTRIBUTING.md
@@ -41,14 +41,13 @@ also provided in Coq, but there are no proofs associated.
 
 - Author(s):
   - Yves Bertot (initial)
-- Coq-community maintainer(s):
-  - Kartik Singhal ([**@k4rtik**](https://github.com/k4rtik))
+- Rocq-community maintainer(s):
+  - Yves Bertot ([**@ybertot**](https://github.com/ybertot))
 - License: [MIT License](LICENSE)
-- Compatible Coq versions: 8.10 or later
+- Compatible Rocq/Coq versions: 8.19 or 8.20
 - Additional dependencies:
-  - [num](https://opam.ocaml.org/packages/num/)
   - [ocamlbuild](https://github.com/ocaml/ocamlbuild)
-- Coq namespace: `Semantics`
+- Rocq/Coq namespace: `Semantics`
 - Related publication(s):
   - [Theorem proving support in programming language semantics](https://hal.inria.fr/inria-00160309) doi:[10.1017/CBO9780511770524.016](https://doi.org/10.1017/CBO9780511770524.016)
 
@@ -58,15 +57,19 @@ The easiest way to install the latest released version of Semantics
 is via [OPAM](https://opam.ocaml.org/doc/Install.html):
 
 ```shell
-opam repo add coq-released https://coq.inria.fr/opam/released
+opam repo add rocq-released https://rocq-prover.org/opam/released
 opam install coq-semantics
 ```
 
-To instead build and install manually, do:
+To instead build and install manually, you need to make sure that all the
+libraries this development depends on are installed.  The easiest way to do that
+is still to rely on opam:
 
 ``` shell
 git clone https://github.com/coq-community/semantics.git
 cd semantics
+opam repo add rocq-released https://rocq-prover.org/opam/released
+opam install --deps-only .
 make   # or make -j <number-of-cores-on-your-machine> 
 make install
 ```
